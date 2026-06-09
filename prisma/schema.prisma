@@ -1,0 +1,177 @@
+// ament — one corpus, many lenses
+// All domain entities live here. The single source of truth for the data model.
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
+}
+
+datasource db {
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+  directUrl  = env("DIRECT_URL")
+  extensions = [pgvector(map: "vector")]
+}
+
+// ─── Auth (Auth.js / next-auth required tables) ────────────────────────────
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// ─── Core domain ───────────────────────────────────────────────────────────
+
+model User {
+  id            String       @id @default(cuid())
+  name          String?
+  email         String?      @unique
+  emailVerified DateTime?
+  image         String?
+  accounts      Account[]
+  sessions      Session[]
+  memberships   Membership[]
+  depositions   Deposition[]
+  invites       Invite[]
+  createdAt     DateTime     @default(now())
+}
+
+// An Organisation has exactly one Corpus (the accumulated thought).
+// Corpus is implicit — it is the sum of all Depositions.
+model Organisation {
+  id          String       @id @default(cuid())
+  name        String
+  slug        String       @unique
+  description String?      @db.Text
+  memberships Membership[]
+  depositions Deposition[]
+  prompts     Prompt[]
+  essays      Essay[]
+  invites     Invite[]
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+}
+
+model Membership {
+  id             String       @id @default(cuid())
+  userId         String
+  organisationId String
+  role           MemberRole   @default(MEMBER)
+  joinedAt       DateTime     @default(now())
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organisation   Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, organisationId])
+}
+
+enum MemberRole {
+  ADMIN
+  MEMBER
+}
+
+model Invite {
+  id             String       @id @default(cuid())
+  email          String
+  organisationId String
+  invitedById    String
+  role           MemberRole   @default(MEMBER)
+  token          String       @unique @default(cuid())
+  expiresAt      DateTime
+  usedAt         DateTime?
+  organisation   Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+  invitedBy      User         @relation(fields: [invitedById], references: [id])
+  createdAt      DateTime     @default(now())
+}
+
+// Eliciting questions that prompt members to deposit thought.
+// A small library lives here; free depositions have no prompt.
+model Prompt {
+  id             String        @id @default(cuid())
+  organisationId String?       // null = global library prompt
+  text           String        @db.Text
+  category       String?       // e.g. "strategy", "culture", "identity"
+  isActive       Boolean       @default(true)
+  organisation   Organisation? @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+  depositions    Deposition[]
+  createdAt      DateTime      @default(now())
+}
+
+// A Deposition is the atomic unit of the Corpus.
+// It is embedded and stored with a vector for retrieval.
+model Deposition {
+  id             String       @id @default(cuid())
+  organisationId String
+  authorId       String
+  promptId       String?
+  body           String       @db.Text      // rich text (HTML from TipTap)
+  bodyPlain      String       @db.Text      // plain-text version for embedding
+  themes         String[]     @default([])  // auto-extracted tags
+  isAnchor       Boolean      @default(false) // marked as a decision/commitment
+  anchorLabel    String?                    // short label, e.g. "Decided to exit Series A"
+  period         String?                    // e.g. "2024-Q1" — derived from createdAt
+  embeddingId    String?      @unique
+  organisation   Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+  author         User         @relation(fields: [authorId], references: [id])
+  prompt         Prompt?      @relation(fields: [promptId], references: [id])
+  embedding      Embedding?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@index([organisationId])
+  @@index([organisationId, period])
+  @@index([organisationId, isAnchor])
+}
+
+// Embeddings stored in a separate table with pgvector column.
+// The vector column is added via raw SQL in the migration (see prisma/migrations/).
+model Embedding {
+  id           String     @id @default(cuid())
+  depositionId String     @unique
+  // vector column managed via raw SQL (Prisma doesn't support pgvector natively)
+  model        String     // e.g. "voyage-3" or "text-embedding-3-small"
+  dimensions   Int        @default(1024)
+  deposition   Deposition @relation(fields: [depositionId], references: [id], onDelete: Cascade)
+  createdAt    DateTime   @default(now())
+}
+
+// A quarterly Essay synthesising a period's depositions.
+// Generated once and cached; regeneratable by admin.
+model Essay {
+  id             String       @id @default(cuid())
+  organisationId String
+  period         String       // e.g. "2024-Q1"
+  title          String
+  body           String       @db.Text  // HTML, rendered with Garamond
+  depositionIds  String[]     @default([]) // depositions cited in this essay
+  generatedAt    DateTime     @default(now())
+  organisation   Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+}

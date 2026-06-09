@@ -1,0 +1,139 @@
+@import "tailwindcss";
+
+/* ─── ament brand tokens ─────────────────────────────────────────────────── */
+/* Edit colours here to retheme the entire product.                           */
+
+@theme {
+  /* Primary palette */
+  --color-ink: #1A1816;
+  --color-paper: #F4EFE4;
+  --color-siena: #9C4221;
+  --color-siena-light: #C4623A;
+  --color-stone: #8C8478;
+  --color-ash: #D6CFC0;
+  --color-ash-dark: #B8B0A0;
+
+  /* Font families */
+  --font-display: "EB Garamond", Georgia, serif;
+  --font-ui: "Inter", system-ui, sans-serif;
+}
+
+/* ─── Base ───────────────────────────────────────────────────────────────── */
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  background-color: #F4EFE4;
+  color: #1A1816;
+  font-family: "Inter", system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  min-height: 100vh;
+}
+
+/* ─── Prose / essay reading styles ──────────────────────────────────────── */
+/* Applied to .prose-ament wrappers — Essays, Mirror answers, Inheritance.  */
+
+.prose-ament {
+  font-family: "EB Garamond", Georgia, serif;
+  font-size: 1.2rem;
+  line-height: 1.85;
+  color: #1A1816;
+}
+
+.prose-ament p {
+  margin-bottom: 1.5em;
+  max-width: 66ch;
+}
+
+.prose-ament h1 {
+  font-family: "EB Garamond", Georgia, serif;
+  font-size: 2.2rem;
+  font-weight: 400;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+  margin-bottom: 0.5em;
+  margin-top: 0;
+}
+
+.prose-ament h2 {
+  font-family: "EB Garamond", Georgia, serif;
+  font-size: 1.6rem;
+  font-weight: 400;
+  margin-top: 2em;
+  margin-bottom: 0.5em;
+}
+
+.prose-ament h3 {
+  font-family: "EB Garamond", Georgia, serif;
+  font-size: 1.25rem;
+  font-style: italic;
+  font-weight: 400;
+  margin-top: 1.5em;
+  margin-bottom: 0.3em;
+}
+
+.prose-ament blockquote {
+  border-left: 2px solid #9C4221;
+  padding-left: 1.5em;
+  margin-left: 0;
+  color: #8C8478;
+  font-style: italic;
+}
+
+/* Citation links — inline [Author, date] references */
+.prose-ament .citation {
+  color: #9C4221;
+  font-style: italic;
+  font-size: 0.9em;
+  cursor: pointer;
+  text-decoration: underline;
+  text-decoration-style: dotted;
+  text-underline-offset: 3px;
+}
+
+/* ─── Thin corpus notice ─────────────────────────────────────────────────── */
+.corpus-thin-notice {
+  font-family: "EB Garamond", Georgia, serif;
+  font-style: italic;
+  color: #8C8478;
+  font-size: 1rem;
+  border-left: 2px solid #D6CFC0;
+  padding-left: 1rem;
+}
+
+/* ─── Scrollbar ─────────────────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #D6CFC0; border-radius: 3px; }
+
+/* ─── Focus ring ────────────────────────────────────────────────────────── */
+:focus-visible {
+  outline: 2px solid #9C4221;
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+/* ─── TipTap editor base ────────────────────────────────────────────────── */
+.tiptap {
+  font-family: "EB Garamond", Georgia, serif;
+  font-size: 1.1rem;
+  line-height: 1.75;
+  color: #1A1816;
+  outline: none;
+  min-height: 200px;
+}
+
+.tiptap p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  color: #8C8478;
+  float: left;
+  height: 0;
+  pointer-events: none;
+  font-style: italic;
+}
