@@ -116,7 +116,7 @@ export default function LoginPage() {
 // Development-only quick sign-in — lets a non-technical operator test the
 // app locally without configuring email. Not shown in production.
 function DevLogin() {
-  const [email, setEmail] = useState("marielle.voss@haldenpartners.example");
+  const [email, setEmail] = useState("nemefer@gmail.com");
   const [loading, setLoading] = useState(false);
 
   async function handleDevLogin(e: React.FormEvent) {
